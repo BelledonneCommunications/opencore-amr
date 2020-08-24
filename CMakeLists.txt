@@ -219,9 +219,9 @@ else()
 	add_library(opencore-amrnb SHARED ${AMRNB_SOURCES})
 	set_target_properties(opencore-amrnb PROPERTIES VERSION 0.0.3)
 	if(MSVC)
-		if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-			install(FILES ${CMAKE_CURRENT_BINARY_DIR}/Debug/opencore-amrnb.pdb
-				DESTINATION bin
+		if(CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
+			install(FILES $<TARGET_PDB_FILE:opencore-amrnb>
+				DESTINATION ${CMAKE_INSTALL_BINDIR}
 				PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
 			)
 		endif()
@@ -311,9 +311,9 @@ if(ENABLE_AMRWB_DECODER)
 		add_library(opencore-amrwb SHARED ${AMRWB_SOURCES})
 		set_target_properties(opencore-amrwb PROPERTIES VERSION 0.0.3)
 		if(MSVC)
-			if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-				install(FILES ${CMAKE_CURRENT_BINARY_DIR}/Debug/opencore-amrwb.pdb
-					DESTINATION bin
+			if(CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
+				install(FILES $<TARGET_PDB_FILE:opencore-amrwb>
+					DESTINATION ${CMAKE_INSTALL_BINDIR}
 					PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
 				)
 			endif()
