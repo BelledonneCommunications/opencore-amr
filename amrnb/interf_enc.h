@@ -39,8 +39,29 @@ enum Mode {
 };
 #endif
 
+/*!
+ *  initiliaze the amr-nb encoder
+ *  @param dtx	[in] flag to enable/disable the DTX support
+ *  @return the encorder handler (state); null on error (?)
+ */
 void* Encoder_Interface_init(int dtx);
+
+/*!
+ *  deinit the amr-nb encoder
+ *  @param *state [in] the amr encoder handler pointer obtained
+ *  from the call to \a Encoder_Interface_init
+ */
 void Encoder_Interface_exit(void* state);
+
+/*!
+ *  encode a buffer containing wav audio samples
+ *  audio samples MUST be 8KHz, s16b (le?)
+ *  @param *state [in] amr encoder handler
+ *  @param mode [in] the amr mode to use to encode the audio buffer
+ *  @param *speech [in] buffer with audio samples
+ *  @param *out [out] pointer to the amr-nb encoded buffer
+ *  @param forceSpeech [in] ????
+ */
 int Encoder_Interface_Encode(void* state, enum Mode mode, const short* speech, unsigned char* out, int forceSpeech);
 
 #ifdef __cplusplus
