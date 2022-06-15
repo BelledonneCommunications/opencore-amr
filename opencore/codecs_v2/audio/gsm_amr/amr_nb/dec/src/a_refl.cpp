@@ -226,7 +226,7 @@ void A_Refl(
             {
                 refl[i] = 0;
             }
-            break;
+            return;
         }
 
         refl[i] = shl(aState[i], 3, pOverflow);
@@ -261,7 +261,7 @@ void A_Refl(
                 {
                     refl[i] = 0;
                 }
-                break;
+                return;
             }
 
             bState[j] = (Word16)(L_temp);
