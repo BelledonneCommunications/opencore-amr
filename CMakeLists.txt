@@ -1,6 +1,6 @@
 ############################################################################
 # CMakeLists.txt
-# Copyright (C) 2015  Belledonne Communications, Grenoble France
+# Copyright (C) 2015-2023  Belledonne Communications, Grenoble France
 #
 ############################################################################
 #
@@ -20,27 +20,19 @@
 #
 ############################################################################
 
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.22)
+
 project(OPENCOREAMR)
 
 
-option(ENABLE_STATIC "Build static library (default is shared library)." NO)
 option(ENABLE_AMRNB_ENCODER "Enable AMR-NB encoder (default is yes)." YES)
 option(ENABLE_AMRNB_DECODER "Enable AMR-NB decoder (default is yes)." YES)
 option(ENABLE_AMRWB_DECODER "Enable AMR-WB decoder (default is yes)." YES)
 
 
-set(AMRNB_COMMON_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/opencore/codecs_v2/audio/gsm_amr/amr_nb/common/src)
-set(AMRNB_DEC_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/opencore/codecs_v2/audio/gsm_amr/amr_nb/dec/src)
-set(AMRNB_ENC_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/opencore/codecs_v2/audio/gsm_amr/amr_nb/enc/src)
-set(AMRNB_INCLUDE_DIRS
-	oscl
-	${AMRNB_DEC_SRC_DIR}
-	opencore/codecs_v2/audio/gsm_amr/amr_nb/common/include
-	opencore/codecs_v2/audio/gsm_amr/amr_nb/dec/include
-	opencore/codecs_v2/audio/gsm_amr/common/dec/include
-	${AMRNB_ENC_SRC_DIR}
-)
+set(AMRNB_COMMON_SRC_DIR ${PROJECT_SOURCE_DIR}/opencore/codecs_v2/audio/gsm_amr/amr_nb/common/src)
+set(AMRNB_DEC_SRC_DIR ${PROJECT_SOURCE_DIR}/opencore/codecs_v2/audio/gsm_amr/amr_nb/dec/src)
+set(AMRNB_ENC_SRC_DIR ${PROJECT_SOURCE_DIR}/opencore/codecs_v2/audio/gsm_amr/amr_nb/enc/src)
 
 
 set(AMRNB_SOURCES
@@ -207,27 +199,34 @@ if(ENABLE_AMRNB_ENCODER)
 	)
 endif()
 if(WIN32)
-	file(READ ${CMAKE_CURRENT_SOURCE_DIR}/amrnb/opencore-amrnb.sym AMRNB_SYM)
-	file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/opencore-amrnb.def "LIBRARY opencore-amrnb\nEXPORTS\n${AMRNB_SYM}")
-	list(APPEND AMRNB_SOURCES ${CMAKE_CURRENT_BINARY_DIR}/opencore-amrnb.def)
+	file(READ ${PROJECT_SOURCE_DIR}/amrnb/opencore-amrnb.sym AMRNB_SYM)
+	file(WRITE ${PROJECT_BINARY_DIR}/opencore-amrnb.def "LIBRARY opencore-amrnb\nEXPORTS\n${AMRNB_SYM}")
+	list(APPEND AMRNB_SOURCES ${PROJECT_BINARY_DIR}/opencore-amrnb.def)
 endif()
 
 
-if(ENABLE_STATIC)
-	add_library(opencore-amrnb STATIC ${AMRNB_SOURCES})
-else()
-	add_library(opencore-amrnb SHARED ${AMRNB_SOURCES})
-	set_target_properties(opencore-amrnb PROPERTIES VERSION 0.0.3)
-	if(MSVC)
-		if(CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
-			install(FILES $<TARGET_PDB_FILE:opencore-amrnb>
-				DESTINATION ${CMAKE_INSTALL_BINDIR}
-				PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
-			)
-		endif()
+add_library(opencore-amrnb ${AMRNB_SOURCES})
+set_target_properties(opencore-amrnb PROPERTIES VERSION 0.0.3)
+if(MSVC AND BUILD_SHARED_LIBS)
+	if(CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
+		install(FILES $<TARGET_PDB_FILE:opencore-amrnb>
+			DESTINATION ${CMAKE_INSTALL_BINDIR}
+			PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
+		)
 	endif()
 endif()
-target_include_directories(opencore-amrnb PRIVATE ${AMRNB_INCLUDE_DIRS})
+target_include_directories(opencore-amrnb
+	PUBLIC
+		$<INSTALL_INTERFACE:include>
+		$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}>
+	PRIVATE
+		oscl
+		${AMRNB_DEC_SRC_DIR}
+		${AMRNB_ENC_SRC_DIR}
+		${PROJECT_SOURCE_DIR}/opencore/codecs_v2/audio/gsm_amr/amr_nb/common/include
+		${PROJECT_SOURCE_DIR}/opencore/codecs_v2/audio/gsm_amr/amr_nb/dec/include
+		${PROJECT_SOURCE_DIR}/opencore/codecs_v2/audio/gsm_amr/common/dec/include
+)
 
 install(TARGETS opencore-amrnb
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
@@ -249,13 +248,7 @@ install(FILES ${AMRNB_HEADER_FILES}
 
 
 if(ENABLE_AMRWB_DECODER)
-	set(AMRWB_DEC_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/opencore/codecs_v2/audio/gsm_amr/amr_wb/dec/src)
-	set(AMRWB_INCLUDE_DIRS
-		oscl
-		${AMRWB_DEC_SRC_DIR}
-		opencore/codecs_v2/audio/gsm_amr/amr_wb/dec/include
-		opencore/codecs_v2/audio/gsm_amr/common/dec/include
-	)
+	set(AMRWB_DEC_SRC_DIR ${PROJECT_SOURCE_DIR}/opencore/codecs_v2/audio/gsm_amr/amr_wb/dec/src)
 
 	set(AMRWB_SOURCES
 		amrwb/wrapper.cpp
@@ -300,26 +293,31 @@ if(ENABLE_AMRWB_DECODER)
 		${AMRWB_DEC_SRC_DIR}/weight_amrwb_lpc.cpp
 	)
 	if(WIN32)
-		file(READ ${CMAKE_CURRENT_SOURCE_DIR}/amrwb/opencore-amrwb.sym AMRWB_SYM)
-		file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/opencore-amrwb.def "LIBRARY opencore-amrwb\nEXPORTS\n${AMRWB_SYM}")
-		list(APPEND AMRWB_SOURCES ${CMAKE_CURRENT_BINARY_DIR}/opencore-amrwb.def)
+		file(READ ${PROJECT_SOURCE_DIR}/amrwb/opencore-amrwb.sym AMRWB_SYM)
+		file(WRITE ${PROJECT_BINARY_DIR}/opencore-amrwb.def "LIBRARY opencore-amrwb\nEXPORTS\n${AMRWB_SYM}")
+		list(APPEND AMRWB_SOURCES ${PROJECT_BINARY_DIR}/opencore-amrwb.def)
 	endif()
 
-	if(ENABLE_STATIC)
-		add_library(opencore-amrwb STATIC ${AMRWB_SOURCES})
-	else()
-		add_library(opencore-amrwb SHARED ${AMRWB_SOURCES})
-		set_target_properties(opencore-amrwb PROPERTIES VERSION 0.0.3)
-		if(MSVC)
-			if(CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
-				install(FILES $<TARGET_PDB_FILE:opencore-amrwb>
-					DESTINATION ${CMAKE_INSTALL_BINDIR}
-					PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
-				)
-			endif()
+	add_library(opencore-amrwb ${AMRWB_SOURCES})
+	set_target_properties(opencore-amrwb PROPERTIES VERSION 0.0.3)
+	if(MSVC AND BUILD_SHARED_LIBS)
+		if(CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
+			install(FILES $<TARGET_PDB_FILE:opencore-amrwb>
+				DESTINATION ${CMAKE_INSTALL_BINDIR}
+				PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
+			)
 		endif()
 	endif()
-	target_include_directories(opencore-amrwb PRIVATE ${AMRWB_INCLUDE_DIRS})
+	target_include_directories(opencore-amrwb
+		PUBLIC
+			$<INSTALL_INTERFACE:include>
+			$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}>
+		PRIVATE
+			oscl
+			${PROJECT_SOURCE_DIR}/opencore/codecs_v2/audio/gsm_amr/amr_wb/dec/src/
+			${PROJECT_SOURCE_DIR}/opencore/codecs_v2/audio/gsm_amr/amr_wb/dec/include
+			${PROJECT_SOURCE_DIR}/opencore/codecs_v2/audio/gsm_amr/common/dec/include
+	)
 
 	install(TARGETS opencore-amrwb
                 RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
